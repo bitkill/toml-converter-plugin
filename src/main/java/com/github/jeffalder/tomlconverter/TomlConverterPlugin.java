@@ -10,6 +10,7 @@ import com.github.jeffalder.tomlconverter.tasks.TomlWriterTask;
 import org.gradle.api.NonNullApi;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.logging.LogLevel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,13 +24,20 @@ public class TomlConverterPlugin implements Plugin<Project> {
     @Override
     public void apply(final Project project) {
         final var dependencyContainer = new ConcurrentHashMap<Dependency, Boolean>();
-        final Consumer<Dependency> dependencyConsumer = dep -> dependencyContainer.put(dep, true);
+        final Consumer<Dependency> dependencyConsumer = dep -> {
+            // TODO: remove
+            project.getLogger().log(LogLevel.INFO, String.valueOf(dep));
+            dependencyContainer.put(dep, true);
+        };
         final var libraryTable = new TomlTable<LibraryEntry>("libraries");
         final List<BuildGradleReplacer> replacers = new ArrayList<>();
 
-        final var extractionTasks = project.getAllprojects().stream().map(proj ->
+        final var extractionTasks = project.getAllprojects().stream()
+            .map(proj ->
                         proj.getTasks().create("extractDeps", DependencyExtractionTask.class, task ->
-                                task.setDependencyConsumer(dependencyConsumer)))
+                                task.setDependencyConsumer(dependencyConsumer)
+                        )
+            )
                 .toArray();
 
         final var tomlWriterTask = project.getTasks().create("writeToml", TomlWriterTask.class, task ->

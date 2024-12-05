@@ -1,10 +1,11 @@
 plugins {
     id 'java-gradle-plugin'
+    id 'maven-publish'
     id 'com.gradle.plugin-publish' version '1.1.0'
 }
 
-group = 'io.github.jeffalder'
-version = '1.0.0'
+group = 'io.github.bitkill'
+version = '1.0.1'
 
 repositories {
     mavenCentral()
@@ -16,21 +17,36 @@ java {
     }
 }
 
+// see: https://docs.github.com/en/actions/use-cases-and-examples/publishing-packages/publishing-java-packages-with-gradle#publishing-packages-to-the-maven-central-repository
+publishing {
+    repositories {
+        maven {
+            name = rootProject.name
+            url = 'https://github.com/bitkill/toml-converter-plugin'
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
 dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.api)
+    testImplementation(libs.hamcrest)
 
     testRuntimeOnly(libs.junit.engine)
 }
 
 gradlePlugin {
-    website = 'https://github.com/jeffalder/toml-converter-plugin'
-    vcsUrl = 'https://github.com/jeffalder/toml-converter-plugin'
+    website = 'https://github.com/bitkill/toml-converter-plugin'
+    vcsUrl = 'https://github.com/bitkill/toml-converter-plugin'
     plugins {
         'toml-converter' {
             id = 'io.github.jeffalder.tomlconverter'
             implementationClass = 'com.github.jeffalder.tomlconverter.TomlConverterPlugin'
-            displayName = 'Dependency to Toml Converter Plugin'
+            displayName = 'Fork of jeffalder/toml-converter-plugin, Dependency to Toml Converter Plugin'
             description = 'Extracts your build gradle dependencies and constraints, sets up a Toml file, and replaces entries in build.gradle.'
             tags.set(['toml','convert','dependency','automatic'])
         }
