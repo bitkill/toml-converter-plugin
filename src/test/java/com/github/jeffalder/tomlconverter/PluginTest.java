@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 
 import static com.github.jeffalder.tomlconverter.TomlConverterPlugin.BUILD_SUBDIR;
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,12 +38,15 @@ public class PluginTest {
         Files.write(buildFile.toPath(), List.of("",
                 "plugins {",
                 "  id('java')",
+                "  id('io.freefair.lombok') version '8.11'",
                 "  id('io.github.jeffalder.tomlconverter')",
                 "}",
                 "",
+                "ext { SOME_VERSION = '1.2.3' }",
+                "",
                 "dependencies {",
                 // tests for the group versions (these should match and get merged
-                "  implementation(\"version-group:some-artifact:1.2.3\")",
+                "  implementation(\"version-group:some-artifact:$SOME_VERSION\")",
                 "  testImplementation 'version-group:other-artifact:1.2.3'",
                 // junit will get suffixed, but junit-bom will not
                 "  implementation 'org.junit:junit:4.13.2'",
@@ -79,26 +84,33 @@ public class PluginTest {
         assertTrue(newBuildGradleFile.toFile().exists());
         final var contents = Files.readString(newBuildGradleFile, StandardCharsets.UTF_8);
 
-        final var matcher = Pattern.compile("\n"
-                        + "plugins \\{\n"
-                        + "  id\\('java'\\)\n"
-                        + "  id\\('io.github.jeffalder.tomlconverter'\\)\n"
-                        + "}\n"
-                        + "\n"
-                        + "dependencies \\{\n"
-                        + "  implementation\\(libs\\.some\\.artifact\\)\n"
-                        + "  testImplementation\\(libs\\.other\\.artifact\\)\n"
-                        + "  implementation\\(libs\\.junit([0-9a-f]{4})\\)\n"
-                        + "  implementation platform\\(libs.junit.bom\\)\n"
-                        + "  implementation\\(libs.junit.jupiter.api([0-9a-f]{4})?\\)\n"
-                        + "  runtimeOnly\\(libs.junit.jupiter.api([0-9a-f]{4})?\\)\n"
-                        + "  testImplementation\\(libs.name1\\)\n"
-                        + "  testRuntimeOnly\\(libs.name1\\) \\{ artifact \\{ classifier = 'test' } }\n"
-                        + "}\n"
-                , Pattern.DOTALL).matcher(contents);
+        final var pattern = Pattern.compile("\n"
+            + "plugins \\{\n"
+            + "  id\\('java'\\)\n"
+            + "  id\\('io.freefair.lombok'\\) version '8.11'\n"
+            + "  id\\('io.github.jeffalder.tomlconverter'\\)\n"
+            + "}\n"
+            + "\n"
+            + "ext \\{ SOME_VERSION = '1\\.2\\.3' }\n"
+            + "\n"
+            + "dependencies \\{\n"
+            + "  implementation\\(libs\\.some\\.artifact\\)\n"
+            + "  testImplementation\\(libs\\.other\\.artifact\\)\n"
+            + "  implementation\\(libs\\.junit([0-9a-f]{4})\\)\n"
+            + "  implementation platform\\(libs.junit.bom\\)\n"
+            + "  implementation\\(libs.junit.jupiter.api([0-9a-f]{4})?\\)\n"
+            + "  runtimeOnly\\(libs.junit.jupiter.api([0-9a-f]{4})?\\)\n"
+            + "  testImplementation\\(libs.name1\\)\n"
+            + "  testRuntimeOnly\\(libs.name1\\) \\{ artifact \\{ classifier = 'test' } }\n"
+            + "}\n", Pattern.DOTALL);
 
-        assertTrue(matcher.matches());
+        final var matcher = pattern.matcher(contents);
 
+        // match first to output better errors
+        assertThat(contents, matchesPattern(pattern));
+
+        // match again to get the groups
+        matcher.matches();
         final var implSameName = matcher.group(2);
         final var expectedLine = "junit-jupiter-api" + (implSameName == null ? "" : implSameName)
                 + " = { module = \"org.junit.jupiter:junit-jupiter-api\", version = \"1.2.3\" }";
