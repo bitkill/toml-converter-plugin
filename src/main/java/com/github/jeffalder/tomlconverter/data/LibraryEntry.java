@@ -61,4 +61,20 @@ public class LibraryEntry implements TomlTable.TomlTableRow {
         }
         writer.write(" }");
     }
+
+    @Override
+    public String toString() {
+        var toMlEntry = String.format("{ module = \"%s:%s\"", group, name);
+        if (versionKey != null) {
+            toMlEntry += String.format(", %s = \"%s\"", versionKey, version);
+        }
+        toMlEntry += " }";
+        return "LibraryEntry{" +
+            "group='" + group + '\'' +
+            ", name='" + name + '\'' +
+            ", versionKey='" + versionKey + '\'' +
+            ", version='" + version + '\'' +
+            ", classifiers=" + classifiers +
+            "}\n\ttoml=" + toMlEntry;
+    }
 }

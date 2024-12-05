@@ -71,7 +71,12 @@ public class TomlWriterTask extends DefaultTask implements FilePreparation {
         final var libraries = encodeLibraries(dependencyClassifierSets, groupToTomlId);
         libraryTable.addAll(libraries);
 
-        for(final var entry : libraryTable) {
+        // TODO: Remove
+        libraryTable.forEach(l -> {
+            System.out.println(l.toString());
+        });
+
+        for (final var entry : libraryTable) {
             for (final var classifier : entry.getValue().getClassifiers()) {
                 consumer.accept(new BuildGradleReplacer(entry.getKey(), entry.getValue(), classifier));
             }
@@ -90,10 +95,10 @@ public class TomlWriterTask extends DefaultTask implements FilePreparation {
 
     private Set<GVACoordinates> buildClassifierGroups() {
         final var classifierGroups = new HashMap<GVACoordinates, Set<String>>();
-        for(final var dependency : dependencies) {
+        for (final var dependency : dependencies) {
             final var key = new GVACoordinates(dependency.getGroup(), dependency.getName(), dependency.getVersion());
             classifierGroups.computeIfAbsent(key, ignored -> new HashSet<>())
-                    .add(dependency.getClassifier());
+                .add(dependency.getClassifier());
         }
 
         return classifierGroups.entrySet().stream()

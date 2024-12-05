@@ -17,16 +17,27 @@ import static java.util.function.Predicate.not;
 /**
  * <p>This task, run on each subproject, extracts all the top-line dependencies
  * from the primary Java configurations: {@code api}, {@code implementation},
- * {@code runtimeOnly}, {@code testImplementation}, and {@code testRuntimeOnly}.
+ * {@code annotationProcessor}, {@code runtimeOnly}, {@code testImplementation},
+ * and {@code testRuntimeOnly}.
  *
  * <p>Dependencies and constraints in any other configuration will <i>not</i> be discovered.
  */
 public class DependencyExtractionTask extends DefaultTask {
+
+    private static final List<String> DEPENDENCY_TYPES = List.of(
+        "api",
+        "implementation",
+        "annotationProcessor",
+        "runtimeOnly",
+        "testImplementation",
+        "testRuntimeOnly"
+    );
+
     private Consumer<Dependency> dependencyConsumer;
 
     @TaskAction
     public void action() {
-        for (final var configName : List.of("api", "implementation", "runtimeOnly", "testImplementation", "testRuntimeOnly")) {
+        for (final var configName : DEPENDENCY_TYPES) {
             final var config = getProject().getConfigurations().findByName(configName);
             if (config == null) {
                 continue;
@@ -39,7 +50,7 @@ public class DependencyExtractionTask extends DefaultTask {
 
     private void consumeDependencies(final DependencySet configDependencies) {
         configDependencies.stream()
-                .filter(dep -> dep instanceof ExternalModuleDependency)
+                .filter(ExternalModuleDependency.class::isInstance)
                 .map(dep -> Dependency.from((ExternalModuleDependency)dep))
                 .forEach(dependencyConsumer);
     }

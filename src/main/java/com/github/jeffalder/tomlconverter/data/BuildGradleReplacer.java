@@ -16,7 +16,9 @@ public class BuildGradleReplacer {
                 + ":"            // match the delimiting colon for the version
                 + "(?:[^\"'$:]+" // match everything except the terminal quote (used for fixed versions)
                 + "|"            // OR
-                + "\\$\\{.*\\})";// match the Groovy interpolation format (used for properties)
+                + "\\$\\{.*\\}" // match the Groovy interpolation format (used for properties)
+                + "|"            // OR
+                + "\\$.*)";      // match the old variable format
 
         final var classifierMatcher = classifier == null ? "" : (":" + classifier);
 
@@ -30,7 +32,7 @@ public class BuildGradleReplacer {
                 + "\\)?"         // grab the possible ending paren
                 + ")", Pattern.quote(libraryEntry.getGroup()), Pattern.quote(libraryEntry.getName())));
 
-        final var innerReplacement = "(libs." + tomlId.replaceAll("-", ".") + ")";
+        final var innerReplacement = "(libs." + tomlId.replace("-", ".") + ")";
 
         if (classifier == null) {
             replacement = innerReplacement;
